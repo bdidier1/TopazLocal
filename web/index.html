@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Topaz Local</title>
+<style>
+  :root{
+    --bg:#161719; --panel:#1f2123; --panel2:#26282b; --line:#34373b;
+    --txt:#e7e9ec; --muted:#8b9097; --accent:#27c4c0; --accent2:#1aa3a0;
+    --good:#3ddc84; --bad:#ff6b6b; --shadow:0 8px 30px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);
+    font-family:"Segoe UI",system-ui,Arial,sans-serif;font-size:14px}
+  .wrap{max-width:860px;margin:0 auto;padding:26px 20px 60px}
+  header{display:flex;align-items:center;gap:12px;margin-bottom:22px}
+  .logo{width:34px;height:34px;border-radius:9px;
+    background:linear-gradient(135deg,var(--accent),#7b5cff);
+    display:flex;align-items:center;justify-content:center;font-weight:800;color:#06201f}
+  h1{font-size:19px;margin:0;font-weight:650;letter-spacing:.2px}
+  .sub{color:var(--muted);font-size:12px;margin-top:1px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;
+    padding:18px;margin-bottom:16px;box-shadow:var(--shadow)}
+  .card h2{font-size:12px;text-transform:uppercase;letter-spacing:1.2px;
+    color:var(--muted);margin:0 0 14px}
+  button{font-family:inherit;cursor:pointer;border:none;border-radius:10px;
+    font-size:14px;font-weight:600;transition:.15s}
+  .btn-main{background:var(--accent);color:#04211f;padding:13px 22px;width:100%;font-size:15px}
+  .btn-main:hover{background:var(--accent2)}
+  .btn-main:disabled{background:#2c3133;color:#5a6066;cursor:not-allowed}
+  .btn-ghost{background:var(--panel2);color:var(--txt);padding:10px 16px;border:1px solid var(--line)}
+  .btn-ghost:hover{border-color:var(--accent)}
+  .btn-danger{background:transparent;color:var(--bad);border:1px solid #5a2e2e;padding:10px 16px}
+  .btn-danger:hover{background:#2a1d1d}
+  .open-row{display:flex;gap:10px;align-items:center}
+  .open-row .btn-ghost{flex:1}
+  .meta{display:none;margin-top:14px}
+  .meta.show{display:block}
+  .filename{font-weight:650;font-size:15px;word-break:break-all;margin-bottom:10px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{background:var(--panel2);border:1px solid var(--line);border-radius:8px;
+    padding:6px 11px;font-size:12px;color:var(--muted)}
+  .chip b{color:var(--txt);font-weight:600}
+  .arrow{color:var(--accent);font-weight:700}
+  /* reglages */
+  .row{display:flex;align-items:center;justify-content:space-between;
+    padding:11px 0;border-bottom:1px solid var(--line)}
+  .row:last-child{border-bottom:none}
+  .row .lbl{color:var(--muted);flex:0 0 150px}
+  .row .ctrl{flex:1;display:flex;align-items:center;gap:12px;justify-content:flex-end}
+  select{background:var(--panel2);color:var(--txt);border:1px solid var(--line);
+    border-radius:8px;padding:8px 10px;font-family:inherit;font-size:13px;min-width:170px}
+  input[type=range]{-webkit-appearance:none;appearance:none;height:4px;border-radius:4px;
+    background:var(--line);outline:none;flex:1;max-width:230px}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;
+    border-radius:50%;background:var(--accent);cursor:pointer;border:2px solid #0c2b2a}
+  input[type=range]:disabled{opacity:.45}
+  .val{width:46px;text-align:right;color:var(--txt);font-variant-numeric:tabular-nums}
+  /* switch */
+  .switch{position:relative;width:44px;height:24px}
+  .switch input{display:none}
+  .slider{position:absolute;inset:0;background:var(--panel2);border:1px solid var(--line);
+    border-radius:24px;transition:.2s;cursor:pointer}
+  .slider:before{content:"";position:absolute;width:18px;height:18px;left:2px;top:2px;
+    background:var(--muted);border-radius:50%;transition:.2s}
+  .switch input:checked + .slider{background:var(--accent)}
+  .switch input:checked + .slider:before{transform:translateX(20px);background:#04211f}
+  .hint{color:var(--muted);font-size:12px;margin-top:6px}
+  #manualPanel.locked{opacity:.5;pointer-events:none}
+  /* progression */
+  #progress{display:none}
+  #progress.show{display:block}
+  .pbar{height:14px;background:var(--panel2);border-radius:10px;overflow:hidden;
+    border:1px solid var(--line);margin:8px 0 4px}
+  .pfill{height:100%;width:0%;border-radius:10px;
+    background:linear-gradient(90deg,var(--accent),#6ee7e3);transition:width .3s}
+  .pgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:16px 0}
+  .stat{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px 12px}
+  .stat .k{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.6px}
+  .stat .v{font-size:19px;font-weight:700;margin-top:3px;font-variant-numeric:tabular-nums}
+  .stage{display:flex;align-items:center;gap:9px;color:var(--accent);font-weight:600;margin-bottom:6px}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--accent);animation:pulse 1s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+  .pct-big{font-size:34px;font-weight:800;font-variant-numeric:tabular-nums}
+  .result{display:none;margin-top:6px}
+  .result.show{display:block}
+  .banner{padding:13px 16px;border-radius:10px;margin-bottom:14px;font-weight:600}
+  .banner.ok{background:rgba(61,220,132,.12);border:1px solid #2f5c43;color:var(--good)}
+  .banner.err{background:rgba(255,107,107,.1);border:1px solid #5a2e2e;color:var(--bad)}
+  .spin{display:inline-block;width:14px;height:14px;border:2px solid #04211f;
+    border-top-color:transparent;border-radius:50%;animation:spin .7s linear infinite;vertical-align:-2px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  /* comparateur avant / apres */
+  .cmp{position:relative;width:100%;border-radius:10px;overflow:hidden;margin:14px 0 6px;
+    cursor:ew-resize;user-select:none;border:1px solid var(--line);background:#000}
+  .cmp img{display:block;width:100%;height:auto}
+  .cmp .before-wrap{position:absolute;inset:0;clip-path:inset(0 50% 0 0)}
+  .cmp .divider{position:absolute;top:0;bottom:0;left:50%;width:2px;margin-left:-1px;
+    background:var(--accent);box-shadow:0 0 10px rgba(39,196,192,.9)}
+  .cmp .divider:after{content:"⇄";position:absolute;top:50%;left:50%;width:32px;height:32px;
+    transform:translate(-50%,-50%);border-radius:50%;background:var(--accent);color:#04211f;
+    border:3px solid #04211f;display:flex;align-items:center;justify-content:center;
+    font-size:15px;font-weight:900}
+  .cmp .tag{position:absolute;top:10px;padding:3px 10px;border-radius:6px;font-size:11px;
+    font-weight:800;letter-spacing:.5px;background:rgba(0,0,0,.65);color:#fff;pointer-events:none}
+  .cmp .tag.l{left:10px}
+  .cmp .tag.r{right:10px;color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">T</div>
+    <div>
+      <h1>Topaz Local</h1>
+      <div class="sub">Amelioration video par IA &mdash; GPU NVIDIA (Real-ESRGAN + NVENC)</div>
+    </div>
+  </header>
+
+  <!-- 1. Source -->
+  <div class="card">
+    <h2>1 &middot; Video source</h2>
+    <button class="btn-ghost" id="browseBtn" style="width:100%;padding:13px">
+      📁 &nbsp;Ouvrir une video du PC
+    </button>
+    <div class="meta" id="meta">
+      <div class="filename" id="fname"></div>
+      <div class="chips" id="chips"></div>
+    </div>
+  </div>
+
+  <!-- 2. Reglages -->
+  <div class="card">
+    <h2>2 &middot; Reglages</h2>
+    <div class="row">
+      <div class="lbl">Automatique</div>
+      <div class="ctrl">
+        <span class="hint" id="autoHint" style="margin:0">Meilleure qualite, regle tout seul</span>
+        <label class="switch"><input type="checkbox" id="autoSw" checked><span class="slider"></span></label>
+      </div>
+    </div>
+    <div id="manualPanel" class="locked">
+      <div class="row">
+        <div class="lbl">Modele IA</div>
+        <div class="ctrl">
+          <select id="model">
+            <option value="auto">Auto</option>
+            <option value="quality">Qualite max (x4plus)</option>
+            <option value="fast">Rapide (animevideo v3)</option>
+            <option value="none">Aucun (juste nettoyage)</option>
+          </select>
+        </div>
+      </div>
+      <div class="row">
+        <div class="lbl">Resolution cible</div>
+        <div class="ctrl">
+          <select id="res">
+            <option value="auto">Auto</option>
+            <option value="x2">2&times; la source</option>
+            <option value="x4">4&times; la source</option>
+            <option value="1080">1080p</option>
+            <option value="1440">1440p</option>
+            <option value="2160">2160p (4K)</option>
+            <option value="same">Identique</option>
+          </select>
+        </div>
+      </div>
+      <div class="row">
+        <div class="lbl">Images / s (fluidite)</div>
+        <div class="ctrl">
+          <span class="hint" id="fpsHint" style="margin:0"></span>
+          <select id="targetFps">
+            <option value="0" id="fpsSource">Source (sans interpolation)</option>
+            <option value="30">30 fps</option>
+            <option value="48">48 fps</option>
+            <option value="60">60 fps</option>
+            <option value="90">90 fps</option>
+            <option value="120">120 fps</option>
+            <option value="144">144 fps</option>
+            <option value="240">240 fps</option>
+          </select>
+        </div>
+      </div>
+      <div class="row">
+        <div class="lbl">Nettete</div>
+        <div class="ctrl">
+          <input type="range" id="sharpen" min="0" max="100" value="30">
+          <span class="val" id="sharpenV">30</span>
+        </div>
+      </div>
+      <div class="row">
+        <div class="lbl">Reduction du bruit</div>
+        <div class="ctrl">
+          <input type="range" id="denoise" min="0" max="100" value="0">
+          <span class="val" id="denoiseV">0</span>
+        </div>
+      </div>
+      <div class="row">
+        <div class="lbl">Encodeur</div>
+        <div class="ctrl">
+          <select id="encoder">
+            <option value="h264_nvenc">H.264 (NVENC) &mdash; compatible</option>
+            <option value="hevc_nvenc">H.265 (NVENC) &mdash; plus leger</option>
+          </select>
+        </div>
+      </div>
+      <div class="row">
+        <div class="lbl">Qualite (cq)</div>
+        <div class="ctrl">
+          <input type="range" id="quality" min="12" max="30" value="18">
+          <span class="val" id="qualityV">18</span>
+        </div>
+      </div>
+    </div>
+    <div class="hint" id="planHint" style="margin-top:12px"></div>
+  </div>
+
+  <!-- 3. Lancer -->
+  <div class="card">
+    <button class="btn-main" id="startBtn" disabled>✨ &nbsp;Ameliorer la video</button>
+
+    <!-- progression -->
+    <div id="progress">
+      <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-top:18px">
+        <div class="stage"><span class="dot"></span><span id="stage">Demarrage...</span></div>
+        <div class="pct-big" id="pctBig">0%</div>
+      </div>
+      <div class="pbar"><div class="pfill" id="pfill"></div></div>
+      <div class="pgrid">
+        <div class="stat"><div class="k">Temps ecoule</div><div class="v" id="elapsed">0:00</div></div>
+        <div class="stat"><div class="k">Temps restant</div><div class="v" id="eta">--:--</div></div>
+        <div class="stat"><div class="k">Images</div><div class="v" id="frames">0</div></div>
+        <div class="stat"><div class="k">Vitesse</div><div class="v" id="speed">0 i/s</div></div>
+      </div>
+      <button class="btn-danger" id="cancelBtn" style="width:100%">Annuler</button>
+    </div>
+
+    <!-- resultat -->
+    <div class="result" id="result"></div>
+  </div>
+</div>
+
+<script>
+let META=null, AUTO=null, polling=null;
+
+const $ = id => document.getElementById(id);
+const fmtTime = s => { s=Math.max(0,Math.round(s)); const m=Math.floor(s/60); return m+":"+String(s%60).padStart(2,"0"); };
+const fmtSize = b => { if(!b) return "?"; const u=["o","Ko","Mo","Go"]; let i=0; while(b>=1024&&i<3){b/=1024;i++;} return b.toFixed(1)+" "+u[i]; };
+
+// --- sliders : maj valeur affichee ---
+["sharpen","denoise","quality"].forEach(id=>{
+  $(id).addEventListener("input",()=>{ $(id+"V").textContent=$(id).value; updatePlan(); });
+});
+["model","res","encoder","targetFps"].forEach(id=> $(id).addEventListener("change",updatePlan));
+
+// --- switch auto ---
+$("autoSw").addEventListener("change",()=>{
+  const on=$("autoSw").checked;
+  $("manualPanel").classList.toggle("locked",on);
+  $("autoHint").textContent = on ? "Meilleure qualite, regle tout seul" : "Reglages manuels";
+  if(on) applyAuto();
+  updatePlan();
+});
+
+// --- ouvrir une video ---
+$("browseBtn").addEventListener("click", async ()=>{
+  $("browseBtn").textContent="⏳  Selection...";
+  try{
+    const r = await fetch("/browse",{method:"POST"}).then(r=>r.json());
+    if(!r.ok){ if(!r.cancelled) alert("Erreur : "+(r.error||"inconnue")); return; }
+    META=r.meta; AUTO=r.auto;
+    showMeta(r);
+    applyAuto();
+    $("startBtn").disabled=false;
+    updatePlan();
+  }catch(e){ alert("Erreur : "+e); }
+  finally{ $("browseBtn").innerHTML="📁 &nbsp;Ouvrir une video du PC"; }
+});
+
+function showMeta(r){
+  $("fname").textContent=META.name;
+  const c=[
+    `<span class="chip"><b>${META.width}&times;${META.height}</b></span>`,
+    `<span class="chip"><b>${META.fps}</b> fps</span>`,
+    `<span class="chip"><b>${fmtTime(META.duration)}</b></span>`,
+    `<span class="chip"><b>${META.frames}</b> images</span>`,
+    `<span class="chip">${META.vcodec} &middot; <b>${fmtSize(META.size)}</b></span>`,
+    `<span class="chip">${META.has_audio?"🔊 audio":"muet"}</span>`,
+  ];
+  $("chips").innerHTML=c.join("");
+  $("meta").classList.add("show");
+  setupFps();
+}
+
+// fps recommande = au moins 60 (fluide), ou plus si la source depasse deja 60
+function recommendedFps(){ return Math.max(60, Math.round(META.fps||30)); }
+
+function ensureFpsOption(v){
+  const sel=$("targetFps");
+  if(v>0 && ![...sel.options].some(o=>+o.value===v)){
+    const o=document.createElement("option");
+    o.value=String(v); o.textContent=v+" fps";
+    sel.appendChild(o);
+  }
+}
+
+function setupFps(){
+  const rec=recommendedFps();
+  ensureFpsOption(rec);
+  const sel=$("targetFps");
+  [...sel.options].forEach(o=>{
+    if(o.value==="0"){ o.textContent="Source ("+META.fps+" fps)"; }
+    else { o.textContent=(+o.value)+" fps"+(+o.value===rec?" — recommandé":""); }
+  });
+  $("fpsHint").textContent="recommandé : "+rec+" fps";
+}
+
+function applyAuto(){
+  if(!AUTO) return;
+  $("model").value = AUTO.model==="realesrgan-x4plus" ? "quality"
+                   : AUTO.model==="realesr-animevideov3" ? "fast"
+                   : AUTO.model ? "auto" : "none";
+  $("res").value="auto";
+  const rec = AUTO.target_fps || recommendedFps();
+  ensureFpsOption(Math.round(rec));
+  $("targetFps").value=String(Math.round(rec));
+  $("sharpen").value=AUTO.sharpen; $("sharpenV").textContent=AUTO.sharpen;
+  $("denoise").value=AUTO.denoise; $("denoiseV").textContent=AUTO.denoise;
+  $("encoder").value=AUTO.encoder;
+  $("quality").value=AUTO.quality; $("qualityV").textContent=AUTO.quality;
+}
+
+// Construit l'objet settings envoye au serveur
+function buildSettings(){
+  if(!META) return null;
+  if($("autoSw").checked) return AUTO;
+
+  const mSel=$("model").value;
+  let model, native;
+  if(mSel==="quality"){model="realesrgan-x4plus";native=4;}
+  else if(mSel==="fast"){model="realesr-animevideov3";native=2;}
+  else if(mSel==="none"){model=null;native=1;}
+  else {model=AUTO.model;native=AUTO.native_scale;}
+
+  const rSel=$("res").value;
+  let target;
+  if(rSel==="auto") target = model ? Math.min(META.height*native,2160) : META.height;
+  else if(rSel==="x2") target=META.height*2;
+  else if(rSel==="x4") target=META.height*4;
+  else if(rSel==="same") target=META.height;
+  else target=parseInt(rSel,10);
+
+  return {
+    auto:false, model, native_scale:native, target_height:target,
+    target_fps:+$("targetFps").value,
+    sharpen:+$("sharpen").value, denoise:+$("denoise").value,
+    encoder:$("encoder").value, quality:+$("quality").value,
+  };
+}
+
+function updatePlan(){
+  const s=buildSettings();
+  if(!s){ $("planHint").textContent=""; return; }
+  const ratio = s.target_height/META.height;
+  const ow = Math.round(META.width*ratio/2)*2, oh=Math.round(s.target_height/2)*2;
+  const modelTxt = s.model==="realesrgan-x4plus" ? "Real-ESRGAN x4plus (qualite)"
+                 : s.model==="realesr-animevideov3" ? "animevideo v3 (rapide)"
+                 : "sans IA";
+  const tfps = s.target_fps || 0;
+  const interped = tfps > META.fps + 0.5;
+  const fpsTxt = ` <span class="arrow">&rarr;</span> ${interped?Math.round(tfps):META.fps} fps${interped?" (fluide)":""}`;
+  $("planHint").innerHTML = `Sortie : <b style="color:var(--accent)">${ow}&times;${oh}</b>`
+    + fpsTxt
+    + ` <span class="arrow">&rarr;</span> ${modelTxt}`;
+}
+
+// --- demarrer ---
+$("startBtn").addEventListener("click", async ()=>{
+  const settings=buildSettings();
+  if(!settings) return;
+  $("startBtn").disabled=true;
+  $("result").classList.remove("show");
+  $("progress").classList.add("show");
+  setProg({percent:0,stage:"Demarrage...",elapsed:0,eta:0});
+  try{
+    const r=await fetch("/start",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({path:META.path,settings})}).then(r=>r.json());
+    if(!r.ok){ alert("Erreur : "+r.error); reset(); return; }
+    poll();
+  }catch(e){ alert("Erreur : "+e); reset(); }
+});
+
+$("cancelBtn").addEventListener("click", async ()=>{
+  $("cancelBtn").textContent="Annulation...";
+  await fetch("/cancel",{method:"POST"});
+});
+
+function poll(){
+  clearInterval(polling);
+  polling=setInterval(async ()=>{
+    let st;
+    try{ st=await fetch("/status").then(r=>r.json()); }catch(e){ return; }
+    setProg(st.progress||{});
+    if(st.status==="done"){ clearInterval(polling); showResult(st.result); }
+    else if(st.status==="error"){ clearInterval(polling); showError(st.error); }
+    else if(st.status==="cancelled"){ clearInterval(polling); showCancelled(); }
+  },500);
+}
+
+function setProg(p){
+  const pct=Math.min(100,p.percent||0);
+  $("pfill").style.width=pct+"%";
+  $("pctBig").textContent=pct.toFixed(0)+"%";
+  $("stage").textContent=p.stage||"...";
+  $("elapsed").textContent=fmtTime(p.elapsed||0);
+  $("eta").textContent = p.eta>0 ? fmtTime(p.eta) : "--:--";
+  if(p.frame!=null && p.frames_total) $("frames").textContent=p.frame+" / "+p.frames_total;
+  if(p.fps_proc!=null) $("speed").textContent=p.fps_proc+" i/s";
+}
+
+function showResult(res){
+  $("progress").classList.remove("show");
+  const r=$("result"); r.classList.add("show");
+  const fpsInfo = ` &middot; ${res.out_fps} fps${res.interpolated?" (fluide)":""}`;
+  let html=`<div class="banner ok">✅ Termine en ${fmtTime(res.elapsed)} &middot; ${res.out_w}&times;${res.out_h}${fpsInfo} &middot; ${fmtSize(res.output_size)}</div>`;
+  if(res.preview){
+    const t=res.preview_token||Date.now();
+    html+=`<div class="cmp" id="cmp">
+        <img class="after-img" src="/preview/after.png?t=${t}">
+        <div class="before-wrap" id="beforeWrap"><img src="/preview/before.png?t=${t}"></div>
+        <div class="divider" id="divider"></div>
+        <span class="tag l">AVANT</span><span class="tag r">APRES</span>
+      </div>
+      <div class="hint" style="text-align:center">Glisse / survole l'image pour comparer avant &harr; apres</div>`;
+  }
+  html+=`<div class="open-row" style="margin-top:12px">
+      <button class="btn-ghost" id="openFile">▶ &nbsp;Lire la video</button>
+      <button class="btn-ghost" id="openFolder">📂 &nbsp;Ouvrir le dossier</button>
+    </div>
+    <div class="hint" style="margin-top:10px;word-break:break-all">${res.output}</div>`;
+  r.innerHTML=html;
+  $("openFile").onclick=()=>fetch("/open-file",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({path:res.output})});
+  $("openFolder").onclick=()=>fetch("/open-folder",{method:"POST"});
+  if(res.preview) initCompare();
+  $("startBtn").disabled=false; $("startBtn").textContent="✨  Ameliorer une autre video";
+}
+
+function initCompare(){
+  const cmp=$("cmp"), bw=$("beforeWrap"), dv=$("divider");
+  if(!cmp) return;
+  function setPos(clientX){
+    const rect=cmp.getBoundingClientRect();
+    let p=(clientX-rect.left)/rect.width; p=Math.max(0,Math.min(1,p));
+    const pct=(p*100).toFixed(1);
+    bw.style.clipPath="inset(0 "+(100-pct)+"% 0 0)";
+    dv.style.left=pct+"%";
+  }
+  cmp.addEventListener("mousemove",e=>setPos(e.clientX));
+  cmp.addEventListener("touchmove",e=>{ if(e.touches[0]) setPos(e.touches[0].clientX); },{passive:true});
+}
+function showError(msg){
+  $("progress").classList.remove("show");
+  const r=$("result"); r.classList.add("show");
+  r.innerHTML=`<div class="banner err">❌ Erreur : ${msg||"inconnue"}</div>`;
+  reset();
+}
+function showCancelled(){
+  $("progress").classList.remove("show");
+  const r=$("result"); r.classList.add("show");
+  r.innerHTML=`<div class="banner err">⏹ Traitement annule</div>`;
+  reset();
+}
+function reset(){
+  $("startBtn").disabled=false; $("startBtn").textContent="✨  Ameliorer la video";
+  $("cancelBtn").textContent="Annuler";
+}
+</script>
+</body>
+</html>

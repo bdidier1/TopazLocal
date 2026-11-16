@@ -1,0 +1,19 @@
+# Binaires telecharges par l'installeur (install.ps1) - trop volumineux pour Git
+tools/
+downloads/
+
+# Fichiers generes a l'execution
+jobs/
+output/
+preview/
+
+# Python
+__pycache__/
+*.pyc
+
+# Config locale Claude Code
+.claude/
+
+# Divers
+*.log
+Thumbs.db
